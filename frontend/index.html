@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EV Infrastructure &amp; Route Optimization Dashboard</title>
+  <meta name="description" content="Data-driven EV charging station analytics, clustering analysis, and route optimization dashboard." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Our styles -->
+  <link rel="stylesheet" href="/static/index.css" />
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="header" id="app-header">
+    <div class="header-brand">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <h1>EV Infrastructure &amp; Route Optimization</h1>
+        <div class="subtitle">Data Science Dashboard — Akilesh Saravanan</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span id="status-text">Loading data…</span>
+    </div>
+  </header>
+
+  <!-- ═══ NAV TABS ═══ -->
+  <nav class="nav-tabs" id="nav-tabs">
+    <button class="nav-tab active" data-tab="overview">📊 Overview</button>
+    <button class="nav-tab" data-tab="map">🗺️ Station Map</button>
+    <button class="nav-tab" data-tab="analytics">📈 Analytics</button>
+    <button class="nav-tab" data-tab="clustering">🎯 Clustering</button>
+    <button class="nav-tab" data-tab="routes">🛣️ Route Optimizer</button>
+    <button class="nav-tab" data-tab="data">📋 Data Explorer</button>
+  </nav>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main-content">
+
+    <!-- ─── OVERVIEW TAB ─────────────────────────────── -->
+    <section class="section active" id="section-overview">
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat-card">
+          <div class="stat-label">Total Stations</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Countries</div>
+          <div class="stat-value" id="stat-countries">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Operators</div>
+          <div class="stat-value" id="stat-operators">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Power</div>
+          <div class="stat-value" id="stat-avg-power">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Operational</div>
+          <div class="stat-value" id="stat-operational">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Fast Charge</div>
+          <div class="stat-value" id="stat-fast">—</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Infrastructure Growth</div>
+              <div class="card-subtitle">Cumulative stations by year</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-growth"></canvas></div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Top Countries</div>
+              <div class="card-subtitle">By number of charging stations</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-countries"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Connector Distribution</div>
+              <div class="card-subtitle">Major connector types</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-connectors"></canvas></div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Power Level Distribution</div>
+              <div class="card-subtitle">Station charging speed categories</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-power"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── MAP TAB ──────────────────────────────────── -->
+    <section class="section" id="section-map">
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Global Charging Station Map</div>
+            <div class="card-subtitle">Interactive map with station markers &amp; heatmap</div>
+          </div>
+          <div class="map-controls">
+            <button class="btn btn-sm active" id="btn-markers" onclick="toggleMapLayer('markers')">Markers</button>
+            <button class="btn btn-sm" id="btn-heatmap" onclick="toggleMapLayer('heatmap')">Heatmap</button>
+          </div>
+        </div>
+        <div class="map-container" id="main-map"></div>
+      </div>
+    </section>
+
+    <!-- ─── ANALYTICS TAB ────────────────────────────── -->
+    <section class="section" id="section-analytics">
+      <div class="grid-2">
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Top Operators</div>
+              <div class="card-subtitle">Market share by station count</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-operators"></canvas></div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Station Status</div>
+              <div class="card-subtitle">Operational vs non-operational</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-status"></canvas></div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Growth by Country</div>
+            <div class="card-subtitle">Cumulative station growth for top 5 countries</div>
+          </div>
+        </div>
+        <div class="chart-container tall"><canvas id="chart-country-growth"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ─── CLUSTERING TAB ───────────────────────────── -->
+    <section class="section" id="section-clustering">
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">K-Means Clustering Analysis</div>
+            <div class="card-subtitle">Identify station concentration zones &amp; coverage gaps</div>
+          </div>
+          <div class="country-select-wrapper">
+            <select class="form-input" id="cluster-country" style="width:200px">
+              <option value="">Global</option>
+            </select>
+            <label style="color:var(--text-secondary);font-size:0.8rem;">
+              K: <input type="range" id="cluster-k" min="2" max="15" value="8" style="vertical-align:middle;width:100px" />
+              <span id="cluster-k-val">8</span>
+            </label>
+            <button class="btn btn-primary btn-sm" onclick="runClustering()">Run Clustering</button>
+          </div>
+        </div>
+        <div class="map-container" id="cluster-map" style="height:450px;"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Cluster Centers</div>
+              <div class="card-subtitle">Each cluster's centroid and station count</div>
+            </div>
+          </div>
+          <div class="cluster-list" id="cluster-list">
+            <div class="loading-overlay"><div class="spinner"></div> Run clustering to see results</div>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Elbow Method</div>
+              <div class="card-subtitle">Find optimal number of clusters</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chart-elbow"></canvas></div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Coverage Gaps — Recommended New Locations</div>
+            <div class="card-subtitle">Areas with low station density that need infrastructure</div>
+          </div>
+        </div>
+        <div class="gap-list" id="gap-list">
+          <div class="loading-overlay"><div class="spinner"></div> Run clustering to identify gaps</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── ROUTE OPTIMIZER TAB ──────────────────────── -->
+    <section class="section" id="section-routes">
+      <div class="grid-2-1">
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Route Optimization Map</div>
+              <div class="card-subtitle">Optimal EV route with charging stops (A* algorithm)</div>
+            </div>
+          </div>
+          <div class="map-container" id="route-map" style="height:500px;"></div>
+          <div id="route-result"></div>
+        </div>
+
+        <div>
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title">Route Parameters</div>
+            </div>
+            <div class="form-group">
+              <label>Origin Latitude</label>
+              <input type="number" class="form-input" id="route-olat" value="51.5074" step="0.01" placeholder="e.g. 51.5074" />
+            </div>
+            <div class="form-group">
+              <label>Origin Longitude</label>
+              <input type="number" class="form-input" id="route-olng" value="-0.1278" step="0.01" placeholder="e.g. -0.1278" />
+            </div>
+            <div class="form-group">
+              <label>Destination Latitude</label>
+              <input type="number" class="form-input" id="route-dlat" value="48.8566" step="0.01" placeholder="e.g. 48.8566" />
+            </div>
+            <div class="form-group">
+              <label>Destination Longitude</label>
+              <input type="number" class="form-input" id="route-dlng" value="2.3522" step="0.01" placeholder="e.g. 2.3522" />
+            </div>
+            <div class="form-group">
+              <label>Vehicle Range (km)</label>
+              <input type="number" class="form-input" id="route-range" value="300" step="10" />
+            </div>
+            <div class="form-group">
+              <label>Current SoC (%)</label>
+              <input type="number" class="form-input" id="route-soc" value="80" min="10" max="100" />
+            </div>
+            <div class="form-group">
+              <label>Minimum SoC (%)</label>
+              <input type="number" class="form-input" id="route-min-soc" value="15" min="5" max="50" />
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:0.5rem" onclick="optimizeRoute()">
+              ⚡ Optimize Route
+            </button>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title">Quick Presets</div>
+            </div>
+            <button class="btn btn-sm" style="width:100%;margin-bottom:0.5rem" onclick="setRoutePreset('london-paris')">London → Paris</button>
+            <button class="btn btn-sm" style="width:100%;margin-bottom:0.5rem" onclick="setRoutePreset('ny-dc')">New York → Washington DC</button>
+            <button class="btn btn-sm" style="width:100%;margin-bottom:0.5rem" onclick="setRoutePreset('berlin-munich')">Berlin → Munich</button>
+            <button class="btn btn-sm" style="width:100%" onclick="setRoutePreset('la-sf')">Los Angeles → San Francisco</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── DATA EXPLORER TAB ────────────────────────── -->
+    <section class="section" id="section-data">
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Station Data Explorer</div>
+            <div class="card-subtitle">Browse and filter the dataset</div>
+          </div>
+          <div class="country-select-wrapper">
+            <select class="form-input" id="data-country" style="width:200px" onchange="loadDataTable()">
+              <option value="">All Countries</option>
+            </select>
+            <select class="form-input" id="data-status" style="width:160px" onchange="loadDataTable()">
+              <option value="">All Statuses</option>
+              <option value="Operational">Operational</option>
+              <option value="Not Operational">Not Operational</option>
+              <option value="Planned For Future Date">Planned</option>
+            </select>
+            <span id="data-count" style="font-size:0.8rem;color:var(--text-muted)"></span>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Operator</th>
+                <th>Country</th>
+                <th>Town</th>
+                <th>Power (kW)</th>
+                <th>Connector</th>
+                <th>Status</th>
+                <th>Year</th>
+              </tr>
+            </thead>
+            <tbody id="data-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center;justify-content:center;">
+          <button class="btn btn-sm" id="data-prev" onclick="dataPage(-1)">← Prev</button>
+          <span id="data-page-info" style="font-size:0.8rem;color:var(--text-muted)">Page 1</span>
+          <button class="btn btn-sm" id="data-next" onclick="dataPage(1)">Next →</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
